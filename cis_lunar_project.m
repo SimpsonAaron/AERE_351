@@ -39,10 +39,10 @@ v_0 =  sqrt(2/r_0)*.999; %DU/TU choosing 99.9% of escape velocity to get high sp
 lambda_1range = [25:0.000001:29]; %deg lambda range to test
 Alt_3margin = .1; %
 Alt_3plot = zeros(1,length(lambda_1range));
-Epsilon_2plot = zeros(1,length(v_0ones));
+Epsilon_2plot = zeros(1,length(lambda_1range));
 
 for i = 1:length(lambda_1range)
-    [Alt_3plot(i),Em_0,Epsilon_2plot(i)] = todamoon(r_0,v_0ones(i),phi_0,lambda_1range(i)); 
+    [Alt_3plot(i),Em_0,Epsilon_2plot(i)] = todamoon(r_0,v_0,phi_0,lambda_1range(i)); 
     %condensed function for cis-lunar trajectory at end of document
     if Em_0 < 0 & Epsilon_2plot(i) < 0 %"if approach is elliptical andretrograde"
         if abs(Alt_3plot(i)-90) < Alt_3margin %"if Periselenium altitude gets close to 90km, record valuse."
