@@ -1,163 +1,101 @@
-Alt_0 = 322; %km (Circular
-R_e = 6378; %km
-R_m = 1738; %km
-R_s = 66183; %km R_SOI
-D = 384400; %km
-mu_e = 3.986*10^5; %km^3/s^2
-mu_m = 4902.8; %km^3/s^2
-omega_m = 2.6491*10^(-6); %rad/sec
+clear, clc, close all
 
-%Converting to canonical:
-D_DU = D/R_e; %DU
-R_sDU = R_s/R_e; %DU
-mu_eDU = 1;
+mu = 3.986*10^5;
 
-% %Project Test Inputs
-% r_0 = 1.05; %DU
-% v_0 = 1.372; %DU/TU
-% phi_0 = 0; %deg
-% lambda_1 = 30; %deg
-% %[Alt_3,Em_0,Epsilon_2] = todamoon(r_0,v_0,phi_0,lambda_1);
+nu = degtorad(25); %25 degrees in rad
+rP = 72+6378; %r perigee GTO
+rA = 35786+6378; %r apogee GTO
 
-% %Class Example 2 
-% r_0 = 1.05; %DU
-% v_0 = 1.38; %DU/TU
-% phi_0 = 0; %deg
-% lambda_1 = 26.5; %deg
-r_0 = (Alt_0+R_e)/R_e; %DU
-phi_0 = 0; %deg
-v_0 = sqrt(2/r_0)*.999; %DU/TU choosing 99.9% of escape velocity to get high speed and Em_0 < 0
+a = (rA+rP)/2; %semi-major axis (km) GTO
+e = (rA-rP)/(rA+rP); %eccentricity GTO
+p = a*(1-e^2); 
 
-%% Determining Lambda
-lambda_1range = [25:0.000001:29]; %deg lambda range to test
-Alt_3margin = .1; %
-Alt_3plot = zeros(1,length(lambda_1range));
-Epsilon_2plot = zeros(1,length(v_0(ones));
+r = p/(1+e*cos(nu)); %r at nu (km) GTO
+v = sqrt(2*mu/r-mu/a); %velocity at nu (km/s) GTO
 
-for i = 1:length(lambda_1range)
-[Alt_3plot(i),Em_0,Epsilon_2plot(i)] = todamoon(r_0,v_0ones(i),phi_0,lambda_1range(i)); 
-%condensed function for cis-lunar trajectory at end of document
-if Em_0 < 0 & Epsilon_2plot(i) < 0 %"if approach is elliptical andretrograde"
-if abs(Alt_3plot(i)-90) < Alt_3margin %"if Periselenium altitude gets close to 90km, record valuse."
-lambda_1 = lambda_1range(i); 
-Alt_3margin = abs(Alt_3plot(i)-90);
-Alt_3 = Alt_3plot(i);
-end
-end
-end
+v_surface = 0.4084; %earth surface velocity (km/s)
+v_lost = 1.5; %extra velocity lost to drag, gravity, etc. (km/s)
 
-%We find that:
-lambda_1; %deg
-Alt_3;
-Em_0;
-plot (lambda_1range,Alt_3plot);
-hold on ;
-plot(lambda_1,Alt_3,'r*');
-xlabel('Lambda_1');
-ylabel('Altitude at Periselenium');
-grid on;
-Em_0 = v_0^2/2-mu_eDU/r_0;
-Hm_0 = r_0*v_0*cosd(phi_0);
-r_1 = sqrt(D_DU^2+R_sDU^2-2*D_DU*R_sDU*cosd(lambda_1)); %DU
-v_1 = sqrt((Em_0+mu_eDU/r_1)*2); %equating energies
-phi_1 = acosd(Hm_0/v_1/r_1);
-gamma_1 = asind(R_sDU*sind(lambda_1)/r_1);
-a_cl = mu_eDU/(2/r_0-v_0^2); %DU
-e_cl = sqrt(1-Hm_0^2/a_cl/mu_eDU);
-nu_1 = acosd(((a_cl*(1-e_cl^2))/r_1-1)/e_cl); %deg
-E_1 = 2*atan(sqrt((1-e_cl)/(1+e_cl))*tan(deg2rad(nu_1)/2)) %rad
-ToF_1 = sqrt(a_cl^3)*(E_1-e_cl*sin(E_1)); %TU;
-ToF_1hrs = ToF_1*sqrt(R_e^3/mu_e)/360;0 %hrs
-alpha_1 = omega_m*ToF_1; %deg
-gamma_0 = nu_1-alpha_1-gamma_1; %deg
-r_2 = R_sDU*R_e %km;
-V_m = D*omega_m; %km/s
-v_1= v_1*R_e/sqrt(R_e^3/mu_e); %km/s
-v_2 = sqrt(V_m^2+v_1^2-2*V_m*v_1*cosd(phi_1-gamma_1)); %km/s
-Epsilon_2 = asind(V_m/v_2*cosd(lambda_1)-v_1/v_2*cosd(lambda_1-(phi_1-gamma_1))); %deg
-Em_SOI = v_2^2/2-mu_m/r_2 %km^2/s^2;
-Hm_SOI = r_2*v_2*sind(Epsilon_2); %km/s
-p_2 = Hm_SOI^2/mu_m; %km
-a_2 = mu_m/(2*mu_m/r_2-v_2^2); %km
-e_2 = sqrt(1-p_2/a_2);
-r_3 = a_2*(1-e_2); %km
-nu_2 = acosd((a_2*(1-e_2^2)/r_2-1)/e_2); %deg
-F_2 = 2*atanh(sqrt((e_2-1)/(e_2+1))*tan(deg2rad(nu_2)/2)); %rad
-ToF_2 = abs(sqrt(-a_2^3/mu_m)*(e_2*sinh(F_2)-F_2)); %s
-ToF_2hrs = ToF_2/3600; %hrs
-ToF_hrs = ToF_1hrs+ToF_2hrs; %hrs
-v_3 = sqrt(2*(v_2^2/2-mu_m/r_2+mu_m/r_3)); %km/s
-Alt_3 = r_3-R_m; %km
+V_GTO = v + v_lost - v_surface; %Final velocity for GTO insertion at nu (km/s)
 
-fprintf("v_0: %7.15f TU/DU",v_0);
-fprintf("phi_0: %7.15f deg",phi_0);
-fprintf("lambda_1: %7.15f deg",lambda_1);
-fprintf("Em_0: %7.15f Du^2/TU^2",Em_0);
-fprintf("nu_0: %7.15f deg",0);
-fprintf("nu_1: %7.15f deg",nu_1);
-fprintf("gamma_0: %7.15f deg",gamma_0);
-fprintf("r_1: %7.15f DU",r_1);
-fprintf("v_1: %7.15f TU/DU",v_1);
-fprintf("phi_1: %7.15f deg",phi_1);
-fprintf("gamma_1: %7.15f deg",gamma_1);
-fprintf("a_cl: %7.15f DU",a_cl);
-fprintf("e_cl: %7.15f",e_cl);
-fprintf("v_2: %7.15f km/s",v_2);
-fprintf("Epsilon_2: %7.15f deg",Epsilon_2);
-fprintf("Em_2: %7.15f km^2/s^2",Em_SOI);
-fprintf("a_2: %7.15f km",a_2);
-fprintf("e_2: %7.15f",e_2);
-fprintf("r_sp3: %7.15f km",r_3);
-fprintf("Alt_3: %7.15f km",Alt_3);
-fprintf("v_sp3: %7.15f km/s",v_3);
 
-function [Alt_3,Em_0,Epsilon_2] = todamoon(r_0,v_0,phi_0,lambda_1)
-Alt_0 = 322; %km (Circular
-R_e = 6378; %km
-R_m = 1738; %km
-R_s = 66183; %km
-D = 384400; %km
-mu_e = 3.986*10^5; %km^3/s^2
-mu_m = 4902.8; %km^3/s^2
-omega_m = 2.6491*10^(-6); %rad/sec
+V_GTO_a = sqrt(2*mu/rA-mu/a); %velocity at apogee of transfer orbit (km/s)
+V_c2 = sqrt(mu/(rA)); %velocity of circular geostationary orbit 
+i=deg2rad(28.5); %change in inclination
+V3 = sqrt(V_GTO_a^2+V_c2^2-2*V_c2*V_GTO_a*cos(i)); %delta v (burnout) needed to get 3rd stage to Geostationary from GTO
+g = 9.81*10^-3; %km/s^2 earth gravity constant
+m_03 = 3200; %total stage 3 weight (kg)
+Isp3 = 240; %(sec) stage 3 specific impulse
+E3 = 0.15; %stage 3 structure ratio
+V_ex3 = Isp3*g; %stage 3 exhaust velocity (km/s)
+pi_3 = (exp(V3/-V_ex3)-E3)/(1-E3); %stage 3 structure ratio
+m_star3 = pi_3*m_03; %stage 3 electronic payload (kg)
 
-%Converting to canonical:
-D_DU = D/R_e; %DU
-R_sDU = R_s/R_e; %DU
-mu_eDU = 1;
 
-Em_0 = v_0.^2./2-mu_eDU./r_0;
-Hm_0 = r_0*v_0*cosd(phi_0);
-r_1 = sqrt(D_DU^2+R_sDU^2-2*D_DU*R_sDU*cosd(lambda_1)); %DU
-v_1 = sqrt((Em_0+mu_eDU./r_1).*2); %equating energies
-phi_1 = acosd(Hm_0./v_1./r_1);
-gamma_1 = asind(R_sDU*sind(lambda_1)/r_1);
+pi_2_range = linspace(.001,1);
+m_0_output = totalmass(pi_2_range,V_GTO); %using the function defined at the end of the script
+plot(pi_2_range,m_0_output,'r');
+title('Total Mass as a Function of 2nd Stage Payload Ratio');
+xlabel('pi_2');
+ylabel('m_0');
+grid on
 
-a_cl = mu_eDU./(2./r_0-v_0.^2); %DU
-e_cl = sqrt(1-Hm_0.^2./a_cl./mu_eDU);
-nu_1 = acosd(((a_cl.*(1-e_cl.^2))./r_1-1)./e_cl); %deg
 
-E_1 = 2.*atan(sqrt((1-e_cl)./(1+e_cl)).*tan(deg2rad(nu_1)./2)); %rad
-ToF_1 = sqrt(a_cl.^3).*(E_1-e_cl.*sin(E_1)); %TU
+x = .0001:0.00001:.2;
+y = totalmass(x,V_GTO); %using the function defined below
+idx = islocalmin(y);
+figure(1)
+hold on
+plot(x(idx),y(idx),'*b')
+legend('Curve','Local Min')
 
-r_2 = R_sDU.*R_e; %km
-V_m = D.*omega_m; %km/s
-v_1= v_1.*R_e/sqrt(R_e^3./mu_e); %km/s
-v_2 = sqrt(V_m.^2+v_1.^2-2.*V_m.*v_1.*cosd(phi_1-gamma_1)); %km/s
-Epsilon_2 = asind(V_m./v_2.*cosd(lambda_1)-v_1./v_2.*cosd(lambda_1-(phi_1-gamma_1))); %deg
-Em_SOI = v_2.^2./2-mu_m./r_2; %km^2/s^2
-Hm_SOI = r_2.*v_2.*sind(Epsilon_2); %km/s
-p_2 = Hm_SOI.^2./mu_m; %km
-a_2 = mu_m./(2.*mu_m./r_2-v_2.^2); %km
-e_2 = sqrt(1-p_2./a_2);
-r_3 = a_2.*(1-e_2); %km
+hold off
+fprintf('Min located at %0.5f\n',x(idx))
 
-nu_2 = acosd((a_2.*(1-e_2.^2)./r_2-1)./e_2); %deg
-F_2 = 2*atanh(sqrt((e_2-1)./(e_2+1)).*tan(deg2rad(nu_2)./2)); %rad
-ToF_2 = abs(sqrt(-a_2.^3./mu_m).*(e_2.*sinh(F_2)-F_2)); %s
-ToF = ToF_1*sqrt(R_e.^3./mu_e)+ToF_2; %s
-ToF_hrs = ToF./3600; %hrs
 
-v_3 = sqrt(2.*(v_2.^2./2-mu_m./r_2+mu_m./r_3)); %km/s
-Alt_3 = r_3-R_m; %km
+Isp1 = 280; %sec 1st stage specific impulse
+Isp2 = 455; %sec 2nd stage specific impulse
+
+E1 = 0.11; %1st stage structure ratio
+E2 = 0.13; %2nd stage structure ratio
+
+V_ex1 = Isp1*g; %1st stage exhaust velocity
+V_ex2 = Isp2*g; %2nd stage exhaust velocity
+
+
+
+pi_2 = x(idx); %input payload ratio value based on minimum calculated above
+m_02 = m_03./pi_2; %stage 2 total mass (kg)
+m_s2 = (m_03./pi_2-m_03)*E2; %stage 2 structure mass (kg)
+m_p2 = m_02-m_03-m_s2; %stage 2 propellant mass (kg)
+V2 = -V_ex2*log(E2+(1-E2)*pi_2); %stage 2 burnout velocity
+
+
+V1 = V_GTO-V2; %stage 1 burnout velocity
+m_01 = totalmass(pi_2,V_GTO);% total/stage1 1 mass (kg)
+m_s1 = (m_01-m_02)*E1; %stage 1 structure mass (kg)
+m_p1 = m_01-m_02-m_s1; %stage 1 propellant mass (kg)
+pi_1 = m_02/m_01; %stage 1 payload ratio 
+
+function [m_0] = totalmass(pi_2,V_GTO); %this function outputs m_0 as a function of the pi_2 and V_GTO inputs
+g = 9.81*10^-3; %km/s^2 earth gravity constant
+
+Isp1 = 280; %sec 1st stage specific impulse
+Isp2 = 455; %sec 2nd stage specific impulse
+
+E1 = 0.11; %1st stage structure ratio
+E2 = 0.13; %2nd stage structure ratio
+
+V_ex1 = Isp1*g; %1st stage exhaust velocity
+V_ex2 = Isp2*g; %2nd stage exhaust velocity
+
+m_03 = 3200; %3rd stage mass (kg)
+
+%%stage 2 masses based on pi_2:
+m_02 = m_03./pi_2;
+m_s2 = (m_03./pi_2-m_03)*E2;
+m_p2 = m_02-m_03-m_s2;
+
+%%stage 1 masses based on pi_2
+m_0 = ((1-E1).*(m_03./pi_2))./(((exp(V_GTO./-V_ex1))./((E2+(1-E2).*pi_2).^(V_ex2./V_ex1)))-E1); %Total rocket mass as a function of pi2
 end

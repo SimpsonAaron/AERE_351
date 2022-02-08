@@ -36,7 +36,7 @@ phi_0 = 0; %deg
 v_0 =  sqrt(2/r_0)*.999; %DU/TU choosing 99.9% of escape velocity to get high speed and Em_0 < 0
 
 %% Determining Lambda
-lambda_1range = [25:0.000001:29]; %deg lambda range to test
+lambda_1range = (25:0.000001:29); %deg lambda range to test
 Alt_3margin = .1; %
 Alt_3plot = zeros(1,length(lambda_1range));
 Epsilon_2plot = zeros(1,length(lambda_1range));
@@ -44,7 +44,7 @@ Epsilon_2plot = zeros(1,length(lambda_1range));
 for i = 1:length(lambda_1range)
     [Alt_3plot(i),Em_0,Epsilon_2plot(i)] = todamoon(r_0,v_0,phi_0,lambda_1range(i)); 
     %condensed function for cis-lunar trajectory at end of document
-    if Em_0 < 0 & Epsilon_2plot(i) < 0 %"if approach is elliptical andretrograde"
+    if Em_0 < 0 && Epsilon_2plot(i) < 0 %"if approach is elliptical andretrograde"
         if abs(Alt_3plot(i)-90) < Alt_3margin %"if Periselenium altitude gets close to 90km, record valuse."
             lambda_1 = lambda_1range(i); 
             Alt_3margin = abs(Alt_3plot(i)-90);
@@ -78,9 +78,9 @@ nu_1 = acosd(((a_cl*(1-e_cl^2))/r_1-1)/e_cl); %deg
 
 %%
 %V) Time of Flight:
-E_1 = 2*atan(sqrt((1-e_cl)/(1+e_cl))*tan(deg2rad(nu_1)/2)) %rad
+E_1 = 2*atan(sqrt((1-e_cl)/(1+e_cl))*tan(deg2rad(nu_1)/2)); %rad
 ToF_1 = sqrt(a_cl^3)*(E_1-e_cl*sin(E_1)); %TU;
-ToF_1hrs = ToF_1*sqrt(R_e^3/mu_e)/360;0 %hrs
+ToF_1hrs = ToF_1*sqrt(R_e^3/mu_e)/360; %hrs
 
 %%
 %VI) Earth-Moon axis angle and departure angle:
@@ -89,12 +89,12 @@ gamma_0 = nu_1-alpha_1-gamma_1; %deg
 
 %%
 %VII) Inside SOI (SI units):
-r_2 = R_sDU*R_e %km;
+r_2 = R_sDU*R_e; %km;
 V_m = D*omega_m; %km/s
 v_1= v_1*R_e/sqrt(R_e^3/mu_e); %km/s
 v_2 = sqrt(V_m^2+v_1^2-2*V_m*v_1*cosd(phi_1-gamma_1)); %km/s
 Epsilon_2 = asind(V_m/v_2*cosd(lambda_1)-v_1/v_2*cosd(lambda_1-(phi_1-gamma_1))); %deg
-Em_SOI = v_2^2/2-mu_m/r_2 %km^2/s^2;
+Em_SOI = v_2^2/2-mu_m/r_2; %km^2/s^2
 Hm_SOI = r_2*v_2*sind(Epsilon_2); %km/s
 p_2 = Hm_SOI^2/mu_m; %km
 a_2 = mu_m/(2*mu_m/r_2-v_2^2); %km
